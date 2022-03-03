@@ -21,6 +21,11 @@ pragma solidity >=0.6.12;
 
 import "./DssCdpManager.sol";
 
+interface VatGet {
+    function urns(bytes32, address) external view returns (uint, uint);
+    function ilks(bytes32) external view returns (uint256, uint256, uint256, uint256, uint256);
+}
+
 contract GetCdps {
     function getCdpsAsc(address manager, address guy) external view returns (uint[] memory ids, address[] memory urns, bytes32[] memory ilks) {
         uint count = DssCdpManager(manager).count(guy);
@@ -54,5 +59,19 @@ contract GetCdps {
             (id,) = DssCdpManager(manager).list(id);
             i++;
         }
+    }
+
+    function getCdpInfo(address manager, uint cdp) external view returns (uint ink, uint art) {
+        address urnHandler = DssCdpManager(manager).urns(cdp);
+        require(urnHandler != address(0), "invalid Cdp");
+
+        bytes32 ilks = DssCdpManager(manager).ilks(cdp);
+
+        (ink, art) = VatGet(DssCdpManager(manager).vat()).urns(ilks, urnHandler);
+
+    }
+
+    function getIlkInfo(address manager, bytes32 ilk) external view returns (uint256 Art, uint256 rate, uint256 spot, uint256 line, uint256 dust) {
+        (Art, rate, spot, line, dust) = VatGet(DssCdpManager(manager).vat()).ilks(ilk);
     }
 }
